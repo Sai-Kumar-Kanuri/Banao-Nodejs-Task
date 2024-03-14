@@ -91,3 +91,64 @@ export const toggleLike = async (req, res) => {
     }
 }
 
+
+export const addComment = async (req, res) => {
+
+    try {
+        const postId = req.params.id;
+        const userId = req.user._id;
+        const { content } = req.body;
+
+        if (!content) {
+            return res.status(400).json({ message: 'Comment content cannot be empty.' });
+        }
+
+        const post = await Post.findById(postId);
+
+        if (!post) {
+            return res.status(404).json({ message: "Post not Found" });
+        }
+
+        post.comments.push({
+            user: userId,
+            content
+        });
+
+        await post.save();
+
+        res.status(201).json({ message: 'Comment added successfully.', post });
+
+    } catch (error) {
+        console.error('Error adding comment controller:', error);
+        res.status(500).json({ message: 'Failed to add comment.', error: error.message });
+    }
+}
+
+
+export const deleteComment = async (req, res) => {
+    try {
+        const postId = req.params.postId;
+        const commentId = req.params.commentId;
+
+        const post = await Post.findById(postId);
+
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found.' });
+        }
+
+        const commentIndex = post.comments.findIndex(comment => comment._id == commentId);
+
+        if (commentIndex === -1) {
+            return res.status(404).json({ message: 'Comment not found.' });
+        }
+
+        post.comments.splice(commentIndex, 1);
+
+        await post.save();
+
+        res.status(200).json({ message: 'Comment deleted Successfully', post });
+    } catch (error) {
+        console.error('Error deleting comment contoller:', error);
+        res.status(500).json({ message: 'Failed to delete comment.', error: error.message });
+    }
+}
