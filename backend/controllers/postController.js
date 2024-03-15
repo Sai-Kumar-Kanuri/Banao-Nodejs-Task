@@ -28,6 +28,55 @@ export const createPost = async (req, res) => {
     }
 }
 
+export const deletePost = async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const post = await Post.findById(postId);
+
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found.' });
+        }
+
+        if (post.author.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ error: 'Unauthorized to delete this post.' });
+        }
+
+        await Post.deleteOne({ _id: postId });
+
+        res.status(200).json({ message: 'Post deleted successfully.' });
+    } catch (error) {
+        console.error('Error deleting post:', error);
+        res.status(500).json({ error: 'Failed to delete post.', message: error.message });
+    }
+};
+
+export const updatePost = async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const { description, image } = req.body;
+        const post = await Post.findById(postId);
+
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found.' });
+        }
+
+        // Check if the user is authorized to update the post
+        if (post.author.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ error: 'Unauthorized to update this post.' });
+        }
+
+        post.description = description || post.description;
+        post.image = image || post.image;
+
+        await post.save();
+
+        res.status(200).json({ message: 'Post updated successfully.', post });
+    } catch (error) {
+        console.error('Error updating post:', error);
+        res.status(500).json({ error: 'Failed to update post.', message: error.message });
+    }
+};
+
 
 export const getPosts = async (req, res) => {
     try {
